@@ -35,6 +35,7 @@ def getLabeledComments(stars):
     query="""SELECT `review` FROM `rafael`.`cinefrance_moviereviews` WHERE `rating`=%s"""%stars
     cursor.execute(query)
     #countWords
+    #modif
     allWords=[]
     values=[]
     for t in cursor.fetchall():
