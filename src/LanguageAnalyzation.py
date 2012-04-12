@@ -1,8 +1,10 @@
+#-*- coding: utf-8 -*-
 '''
 Created on Apr 10, 2012
 
 @author: rafael
 '''
+
 from __future__ import division
 import MySQLdb
 import re
@@ -32,16 +34,20 @@ def test():
     myTable=[s,s,s]
     count_words(myTable)
     
-
-def get_labeled_comments(stars):
+def get_cursor(stars):
     db=MySQLdb.connect("cinequant.com","rafael","nqq2612","rafael",use_unicode=True,charset="utf8")
     cursor=db.cursor()
     query="""SELECT `review` FROM `rafael`.`cinefrance_moviereviews` WHERE `rating`=%s"""%stars
     cursor.execute(query)
+    return cursor    
+
+def get_labeled_comments(stars):
+    cursor=get_cursor(stars)
     dictionary={"total of comments":cursor.rowcount}
     for t in cursor.fetchall():
         p=re.findall('[^\s,;.!?]+|[,;.!?]', t[0])
         for word in p:
+            word=word.lower()
             if word in dictionary: #
                 dictionary[word]=dictionary.get(word)+1
                 #print dictionary[word]
@@ -53,7 +59,30 @@ def get_labeled_comments(stars):
             print duple'''
     return dictionary        
     
+def feature_one_word(comment,words):
+    features=[]
+    index=0
+    for word in words:
+        if re.search(word, comment):
+            features[index]=1
+        else:
+            features[index]=0
+        index=index+1            
+    return features
 
+'''def feature_two_words(comment,phrases):
+    features=[]
+    index=0
+    for phrase in phrases:
+        if re.search(word, comment):
+            features[index]=1
+        else:
+            features[index]=0
+        index=index+1            
+    return features'''
+
+#doit-on compter plusieurs fois un mot qui apparait plus d'une fois par message ?
+##OUI
 def frequency_of(cle):
     print 'How many times did the word '+cle+' appears in average in comments with:'
     for i in (5, 4.5, 4, 3.5, 3, 2.5, 2, 1.5, 1, 0.5):
@@ -67,5 +96,5 @@ def frequency_of(cle):
     
   
 #test()    
-cle="pue"
+cle=u"et"
 frequency_of(cle)
