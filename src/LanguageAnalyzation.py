@@ -5,20 +5,23 @@ Created on Apr 10, 2012
 '''
 import MySQLdb
 import re
-import string
+import operator
 
 def countWords(myTable):
     allWords=[]
-    values=[]
+    #replace vector for dict(hashmap for python)
+    dictionary=dict(one=1, two=2)
     for comment in myTable:
         p=re.findall('\w+|[,;.!?]', comment)
         for word in p:
-            if values.__contains__(word)==False:
-                values.insert(0,word)
-        allWords=allWords+p
-    for value in values:
-        n=allWords.count(value)
-        print [value, n]
+            if word not in dictionary: #
+                dictionary.insert(word,1)#
+            else: 
+                dictionary[word]=dictionary.get(word)+1
+                print dictionary[word]
+               # dictionary.get(k)=dictionary.get(word)+1
+        #do a sort
+        
         
 def test():
     s=" No meio do caminho tinha uma pedra tinha uma pedra no meio do caminho tinha uma pedra no meio do caminho tinha uma pedra. Nunca me esquecerei desse acontecimento na vida de minhas retinas tao fatigadas. Nunca me esquecerei que no meio do caminho tinha uma pedra tinha uma pedra no meio do caminho no meio do caminho tinha uma pedra"
@@ -34,27 +37,26 @@ def getLabeledComments(stars):
     cursor=db.cursor()
     query="""SELECT `review` FROM `rafael`.`cinefrance_moviereviews` WHERE `rating`=%s"""%stars
     cursor.execute(query)
-    #countWords
-    #modif
-    allWords=[]
-    values=[]
+    dictionary={}
     for t in cursor.fetchall():
-        print t[0]
-        print t
         p=re.findall('[^\s,;.!?]+|[,;.!?]', t[0])
-        print p
         for word in p:
-            if values.__contains__(word)==False:
-                values.insert(0,word)
-                print "insertion : OK!"
-        allWords=allWords+p
-    for value in values:
-        n=allWords.count(value)
-        if n>10:
-            print [value, n]
+            if word in dictionary: #
+                dictionary[word]=dictionary.get(word)+1
+                print dictionary[word]
+            else: 
+                dictionary[word]=1
+                
+    '''for duple in sorted(dictionary.iteritems(),key=operator.itemgetter(1),reverse=True):
+        if duple[1]>50:
+            print duple'''
+    return dictionary        
+    
+        #n=allWords.count(value)
+        #if n>10:
+         #   print [value, n]
     
     
     
     
-#test()    
-getLabeledComments(5)
+
