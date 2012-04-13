@@ -9,6 +9,7 @@ from __future__ import division
 import MySQLdb
 import re
 import operator
+import math
 
 
 
@@ -94,7 +95,41 @@ def frequency_of(cle):
             print 0    
         print
     
-  
+def density_of(cle):
+    P=[0,0,0,0,0,0,0,0,0,0]
+    Q=[0,0,0,0,0,0,0,0,0,0]
+    index=0
+    for i in (5, 4.5, 4, 3.5, 3, 2.5, 2, 1.5, 1, 0.5):
+        D=get_labeled_comments(i)
+        Q[index]=D["total of comments"]
+        if cle in D:
+            P[index]=D[cle] 
+        else:
+            P[index]=0
+        index=index+1
+    Sp=sum(P)
+    Sq=sum(Q)
+    while (index>0):
+        index=index-1
+        P[index]=P[index]/Sp
+        Q[index]=Q[index]/Sq
+    print "density function of appearance of the word "+cle+" :"
+    print P
+    print
+    print "density function of rating of a comment :"
+    print Q
+    print 
+    return [P,Q]
+
+def divergence_KL(cle):
+    dens=density_of(cle)
+    DKL=0
+    index=0
+    while (index<len(dens[0])):
+        DKL=DKL+dens[0][index]*math.log(dens[0][index]/dens[1][index])
+        index=index+1
+    print "Significance of the word "+cle+" :"
+    print DKL
 #test()    
-cle=u"et"
-frequency_of(cle)
+cle=u"depardieu"
+divergence_KL(cle)
