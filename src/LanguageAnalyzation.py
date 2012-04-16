@@ -86,7 +86,7 @@ def all_words_2():#words with the number of appearance
     cursor.execute("""SELECT `review` FROM `rafael`.`cinefrance_moviereviews`""")   
     dictionary={"total of words":cursor.rowcount}
     for t in cursor.fetchall():
-        p=re.findall('[^\s,;.!?]+|[,;.!?]', t[0])
+        p=re.findall('[^\s,;.!?()/]+|[,;.!?]', t[0])
         for word in p:
             word=word.lower()
             if word in dictionary: 
@@ -161,8 +161,7 @@ def density_of(cle):
     #print 
     return [P,Q]
 
-def divergence_KL(cle):
-    dens=density_of(cle)
+def divergence_KL(dens):
     DKL=0
     index=0
     while (index<len(dens[0])):
@@ -176,14 +175,26 @@ def divergence_KL(cle):
 def entropy_test():
     vocab=all_words_2()
     for word in vocab.keys():
-        d=divergence_KL(word)
+        dens=density_of(word)
+        d=divergence_KL(dens)
         print "Significance of the word "+word+" :"
         if (d>0.05):
             print d
 
+def entropy_insertion():
+    vocab=all_words_2()
+    new_db=MySQLdb.connect("cinequant.com","rafael","nqq2612","rafael",use_unicode=True,charset="utf8")
+    new_cursor=new_db.cursor()
+    for word in vocab.keys():
+        dens=density_of(word)
+        d=divergence_KL(dens)
+        new_query="""INSERT INTO `rafael`.`Significance_of_the_words` (`Word`,`Density 5`,`Density 4.5`,`Density 4`,`Density 3.5`,`Density 3`,`Density 2.5`,`Density 2`,`Density 1.5`,`Density 1`,`Density 0.5`,`Divergence_KL`) VALUES ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")"""%(word,dens[0][0],dens[0][1],dens[0][2],dens[0][3],dens[0][4],dens[0][5],dens[0][6],dens[0][7],dens[0][8],dens[0][9],d)
+        new_cursor.execute(new_query)
+        print "insertion réussie"
+
 #test()    
 cle=u"l'espace"
 #divergence_KL(cle)
-entropy_test()
+entropy_insertion()
 #all_words()
 #all_words_2()
