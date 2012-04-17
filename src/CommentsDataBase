@@ -14,19 +14,21 @@ import string
 # debut du script ###                                                                                                                                                   
 ####################                                                                                                                                                    
 
-def insertMovieReview(id_, url, stars, comment, cursor):
+def insert_movie_review(id_, url, stars, comment, cursor):
     insertQuery="""INSERT INTO `rafael`.`cinefrance_moviereviews` (`movie_id`,`allocine_url`,`rating`,`review`) VALUES ("%s", "%s", "%s", "%s");"""%(id_, url, stars ,comment);
     #{"a":id_,"b":url,"c":stars,"d":comment}%
     cursor.execute(insertQuery)
-    print "insertion reussite!"
+    print "insertion reussie!"
     
 
 
-def getMovieReviews(id, allocine_url):
-    #recuperer l'url du film cercher 
+def get_movie_reviews(id, allocine_url):
+    '''recuperer les critiques''' 
     url="http://www.allocine.fr/film/fichefilm-"+allocine_url+"/critiques/spectateurs/recentes/"
-    db2=MySQLdb.connect("cinequant.com","rafael","nqq2612", "rafael", use_unicode=True,charset="utf8")
+    db2=MySQLdb.connect("cinequant.com","rafael","rafael", "rafael", use_unicode=True,charset="utf8")
     cursor2=db2.cursor()
+    urlStart="http://www.allocine.fr"
+            
     while True:
         print "start searching reviews at " + url
         file=urllib2.urlopen(url)
@@ -37,7 +39,7 @@ def getMovieReviews(id, allocine_url):
         StarsArray=soup.findAll ('div', attrs={'class':"stareval stars_medium "}) 
         CommentsArray=soup.findAll ('p', attrs={'class':"margin_10b"})
         i=0 
-        for comment in CommentsArray[0:]:
+        for comment in CommentsArray:
             data1=StarsArray[i].findAll('span')[1].contents[0]
             note=data1[6:].split(' ')[0]
             print note
@@ -46,7 +48,7 @@ def getMovieReviews(id, allocine_url):
             print text
             i=i+1
             if text!=None:
-                insertMovieReview(id, allocine_url, note, text, cursor2)
+                insert_movie_review(id, allocine_url, note, text, cursor2)
                 
                 #va chercher la prochaine page 
         nextSoupTemp=soup.findAll('div',attrs={'class':"pager "})[0].find('a')
@@ -55,20 +57,19 @@ def getMovieReviews(id, allocine_url):
             break
         else:
             nextSoup=nextSoupTemp['href']
-            urlStart="http://www.allocine.fr"
             url=urlStart+nextSoup
             time.sleep(1) 
 
     
-def getAllocineReviews():
-    db=MySQLdb.connect("cinequant.com","rafael","nqq2612", "cqdata", use_unicode=True,charset="utf8")
+def get_allocine_reviews():
+    db=MySQLdb.connect("cinequant.com","rafael","rafael", "cqdata", use_unicode=True,charset="utf8")
     cursor=db.cursor()
     query="""SELECT `movie_id`,`allocine_url` FROM `cqdata`.`cinefrance_basicdata`"""
     cursor.execute(query)
     #print cursor.fetchall()
     for movie in cursor.fetchall():
         print movie
-        getMovieReviews(movie[0],movie[1])
+        get_movie_reviews(movie[0],movie[1])
     
         
-getAllocineReviews()        
+get_allocine_reviews()        
