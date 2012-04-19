@@ -9,8 +9,8 @@ from __future__ import division
 import MySQLdb
 import re
 import operator
-import math
 import numpy 
+import string
 
         
 def safe_x_log_x(x):
@@ -20,7 +20,7 @@ def safe_x_log_x(x):
         
 def test():
     s="Je n'ai pas oublié, voisine de la ville, Notre blanche maison, petite mais tranquille ; Sa Pomone de plâtre et sa vieille Vénus Dans un bosquet chétif cachant leurs membres nus, Et le soleil, le soir, ruisselant et superbe, Qui, derrière la vitre où se brisait sa gerbe, Semblait, grand oeil ouvert dans le ciel curieux, Contempler nos dîners longs et silencieux, Répandant largement ses beaux reflets de cierge Sur la nappe frugale et les rideaux de serge." 
-    p=re.findall('[^\s\',;.!?/()«»]+|[;!?«»]', s)
+    p=re.findall('[^\s\',;.!?/()«»\’]+|[;!?«»]', s)
     p=p+p
     print p
     myTable=[s,s,s]
@@ -30,7 +30,8 @@ def count_words(myTable):
     #replace vector for dict(hashmap for python)
     dictionary={}
     for comment in myTable:
-        p=re.findall('[^\s\',;.!?/()«»]+|[;!?«»]', comment)
+        T=string.replace(comment, '’', '\'')
+        p=re.findall('[^\s\',;.!?()/«»]+|[;!?«»]', T)
         for word in p:
             if word not in dictionary: 
                 dictionary.insert(word,1)
@@ -52,7 +53,8 @@ def get_labeled_comments(stars):
     table=get_reviews_cond_stars(stars)
     dictionary={}
     for t in table:
-        p=re.findall('[^\s\',;.!?()/«»]+|[;!?«»]', t[0])
+        T=string.replace(t[0], '’', '\'')
+        p=re.findall('[^\s\',;.!?()/«»]+|[;!?«»]', T)
         for word in p:
             word=word.lower()
             if word in dictionary: #
@@ -81,7 +83,8 @@ def all_words():
     cursor.execute("""SELECT `review` FROM `rafael`.`cinefrance_moviereviews`""")   
     dictionary={}
     for t in cursor.fetchall():
-        p=re.findall('[^\s\',;.!?()/«»]+|[;!?«»]', t[0])
+        T=string.replace(t[0], '’', '\'')
+        p=re.findall('[^\s\',;.!?()/«»]+|[;!?«»]', T)
         for word in p:
             word=word.lower()
             if word in dictionary: 
@@ -97,32 +100,12 @@ def all_words():
 def all_good_words():
     '''get a dict with all the words that appear at least 10 times in the comments'''
     dic=all_words()
-    new_dictionary={d:dic[d] for d in dic.keys() if dic[d]>49}
+    new_dictionary={d:dic[d] for d in dic.keys() if dic[d]>9}
     print "good words:"
     print len(new_dictionary)        
     return new_dictionary            
     
-def feature_one_word(comment,words): # pas prendre un comment, mais un mot
-    features=[]
-    index=0
-    for word in words:
-        if re.search(word, comment):
-            features[index]=1
-        else:
-            features[index]=0
-        index=index+1            
-    return features
 
-'''def feature_two_words(comment,phrases):
-    features=[]
-    index=0
-    for phrase in phrases:
-        if re.search(word, comment):
-            features[index]=1
-        else:
-            features[index]=0
-        index=index+1            
-    return features'''
 
 #doit-on compter plusieurs fois un mot qui apparait plus d'une fois par message ?
 ##OUI
@@ -188,7 +171,7 @@ def entropy_insertion():
     for word in vocab.keys():
         dens=density_of(word,D)
         d=divergence_KL(dens)
-        new_query="""INSERT INTO `rafael`.`significance_of_the_words_over_50` (`Word`,`Density 5`,`Density 4.5`,`Density 4`,`Density 3.5`,`Density 3`,`Density 2.5`,`Density 2`,`Density 1.5`,`Density 1`,`Density 0.5`,`Divergence_KL`) VALUES ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")"""%(word,dens[0][0],dens[0][1],dens[0][2],dens[0][3],dens[0][4],dens[0][5],dens[0][6],dens[0][7],dens[0][8],dens[0][9],d)
+        new_query="""INSERT INTO `rafael`.`significance_of_the_words` (`Word`,`Density 5`,`Density 4.5`,`Density 4`,`Density 3.5`,`Density 3`,`Density 2.5`,`Density 2`,`Density 1.5`,`Density 1`,`Density 0.5`,`Divergence_KL`) VALUES ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")"""%(word,dens[0][0],dens[0][1],dens[0][2],dens[0][3],dens[0][4],dens[0][5],dens[0][6],dens[0][7],dens[0][8],dens[0][9],d)
         new_cursor.execute(new_query)
         print "insertion réussie"
 
@@ -201,10 +184,28 @@ def get_most_significant_words():
         print t[0]
         print t[11]
         print 
+
+def dictionary_db():
+    dic=all_words()
+    db=MySQLdb.connect("cinequant.com","rafael","rafael","rafael",use_unicode=True,charset="utf8")
+    cursor=db.cursor()
+    #i=u"bien"
+    #Query="""INSERT INTO `rafael`.`cinefrance` (`movie_id`,`all`,`r`,`iew`) VALUES ("%s", "%s");"""%(id_, url, stars ,comment);
+    #query=
+    #print "ok!"
+    cursor.executemany("""INSERT INTO `rafael`.`dictionary` (`Word`,`N° of appearances`) VALUES ("%s", "%s")""", [(i,dic[i]) for i in dic.keys()])
+    print "great work!"
+    
+
+    
 #test()    
-#cle=u"l'espace"
-#divergence_KL(cle)
-entropy_insertion()
+#cle=u"j"
+#D=get_all_labeled_comments()
+#dens=density_of(cle,D)
+#divergence_KL(dens)
+#frequency_of(cle,D)
+#entropy_insertion()
 #all_words()
 #all_good_words()
 #get_most_significant_words()
+dictionary_db()
