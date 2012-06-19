@@ -42,15 +42,18 @@ class AlgorithmTree:
                             print branch1_key
                     
          
+    #if we use features_tree.feature_index as an int, we use the method of New Features
+    #otherwise, if we use features_tree.feature_index as a tuple, we use the method of Normalized Features     
+         
     def write_weights(self,lamb):
         n=len(lamb)
         for i in range(n):
             self.edges[i].weight=lamb[i]
             for context_tree in self.edges[i].edges.values():
                 context_tree.weight+=math.exp(lamb[i])
-                
-    
-    def p_lambda(self,i):
+                            
+    def p_lambda(self,i): #New Features
+        '''Probability (no empirical) of the feature i'''
         branch_i=self.edges[i]
         p_lambda_i=0
         for historic in branch_i.edges.values():

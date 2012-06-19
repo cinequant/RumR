@@ -60,8 +60,10 @@ class FeaturesTree:
                 if (branch2==None):
                     self.edges[branch1_key].edges[branch2_key]=FeaturesTree()
                 self.edges[branch1_key].edges[branch2_key].new_generation(2)
+                #join more generations here for a deeper tree
     
     def get_edges(self):
+        '''access to the dictionary of FeaturesTree's children'''
         return self.edges
     
     def get(self,x):
@@ -71,7 +73,7 @@ class FeaturesTree:
         self.edges.pop(Joker.other)
       
     def remove_features(self):
-        '''excluding .features to quickly save our tree'''
+        '''excluding .features to quickly save our tree as Pickle'''
         self.features.clear()
         self.features=None
         for branch_key in self.edges.keys():
@@ -79,8 +81,9 @@ class FeaturesTree:
             if (branch!=None):
                 branch.remove_features()
             
-    def p_lambda(self,vector,new_feats,n):
-        '''construction of the conditional probability for lambda=vector'''
+    '''def p_lambda(self,vector,new_feats,n):
+        '''#construction of the conditional probability for lambda=vector
+    '''
         if (len(vector)!=n):
             print 'not a good length for lambda! Try again'
         else:
@@ -98,7 +101,7 @@ class FeaturesTree:
                         if (branch2.edges[Joker.other]!=None):
                             print branch2.edges[Joker.other].conditional_probability 
                             print        
-    
+    '''
     def new_features(self):
         '''list where we correspond each new feature (subset of features set) to its index; writes .feature_index'''
         result={sets.ImmutableSet(set()): 0}
@@ -123,7 +126,12 @@ class FeaturesTree:
                         else:
                             branch3.feature_index=0    
         return result
-
+    
+    def normalized_features(self, sel):
+        result={sel[i]:i+1 for i in range(len(sel))}
+        result[None]=0
+        return result
+    
     def collect_new_features(self,new_features_dictionary):
         for branch1_key in self.edges.keys():
             branch1=self.edges[branch1_key]
@@ -153,6 +161,24 @@ class FeaturesTree:
                         SS=sets.ImmutableSet(S)
                         branch3.feature_index=new_features_dictionary[SS] 
         
+    def collect_normalized_features(self, sel):
+        normalized_features=self.normalized_features(sel)
+        for branch1_key in self.edges.keys():
+            branch1=self.edges[branch1_key]
+            for branch2_key in branch1.edges.keys():
+                branch2=branch1.edges[branch2_key]
+                for branch3_key in branch2.edges.keys():
+                    branch3=branch2.edges[branch3_key]
+                    if (branch3==None):
+                        branch3=FeaturesTree()
+                        self.edges[branch1_key].edges[branch2_key].edges[branch3_key]=branch3
+                    S=set()
+                    for element in branch3.features:
+                        S.add(normalized_features[element])
+                    if len(S)<3:
+                        S.add(0)
+                    branch3=tuple(S)    
+                        
 
     def count_occurrences(self):
         '''\tilde{p} calculation; writes occurrence'''
@@ -194,30 +220,10 @@ class FeaturesTree:
                     if (self.edges[Joker.other].edges[Joker.other].edges[Joker.other]==None):
                         self.edges[Joker.other].edges[Joker.other].edges[Joker.other]=FeaturesTree()
                     self.edges[Joker.other].edges[Joker.other].edges[Joker.other].occurrences+=1                    
-                    
-            
-    def write_probability(self,lamb):
-        '''The features field, before valued as None, will give us the conditional probability'''
-        for key in self.edges.keys():
-            if (self.get(key)!=None):
-                self.edges[key].write_probability(lamb)
-            else:
-                index=self.feature_index
-                self.features=math.exp(lamb[index])
-                
-        for branch1_key in self.edges.keys():
-            branch1=self.edges[branch1_key]
-            for branch2_key in branch1.edges.keys():
-                branch2=branch1.edges[branch2_key]
-                sum=0
-                for branch3 in branch2.edges.values():
-                    sum+=branch3.features
-                for branch3_key in branch2.edges.keys():
-                    branch3=branch2.edges[branch3_key]
-                    branch3.features=branch3.features/sum    
+                        
                     
                     
-                    
+    '''                
     def classifier_word(self, word, previous_word, stars):
         a=self.edges[stars].edges[previous_word].edges[word].probability
         b=self.edges[Joker.other].edges[previous_word].edges[word].probability
@@ -239,7 +245,7 @@ class FeaturesTree:
                     result[star]=result[star]*classifier_word(words[i],None,star)
         return result
 
-        
+     '''   
 '''tree=FeaturesTree()
 tree.add_feature((1,11,112,Joker.other,123))
 tree.add_feature((1,11,111,Joker.other,123))
