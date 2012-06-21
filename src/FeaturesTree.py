@@ -127,11 +127,6 @@ class FeaturesTree:
                             branch3.feature_index=0    
         return result
     
-    def normalized_features(self, sel):
-        result={sel[i]:i+1 for i in range(len(sel))}
-        result[None]=0
-        return result
-    
     def collect_new_features(self,new_features_dictionary):
         for branch1_key in self.edges.keys():
             branch1=self.edges[branch1_key]
@@ -160,9 +155,18 @@ class FeaturesTree:
                                 S.add(tuple(L))
                         SS=sets.ImmutableSet(S)
                         branch3.feature_index=new_features_dictionary[SS] 
-        
-    def collect_normalized_features(self, sel):
+    
+    def normalized_features(self, sel):
+        result={sel[i]:i+1 for i in range(len(sel))}
+        result[None]=0
+        return result
+    
+    def collect_normalized_features_index(self, sel):
+        '''For normalized features, feature_index is a tuple of the active features. 
+           The set of features indexes tuples is also the set of second generation vertexes of the AlgorithmTreeNorm
+        '''
         normalized_features=self.normalized_features(sel)
+        result=set()
         for branch1_key in self.edges.keys():
             branch1=self.edges[branch1_key]
             for branch2_key in branch1.edges.keys():
@@ -177,7 +181,9 @@ class FeaturesTree:
                         S.add(normalized_features[element])
                     if len(S)<3:
                         S.add(0)
-                    branch3=tuple(S)    
+                    branch3.feature_index=tuple(S)
+                    result.add(branch3.feature_index)
+        return result             
                         
 
     def count_occurrences(self):
@@ -246,7 +252,8 @@ class FeaturesTree:
         return result
 
      '''   
-'''tree=FeaturesTree()
+'''
+tree=FeaturesTree()
 tree.add_feature((1,11,112,Joker.other,123))
 tree.add_feature((1,11,111,Joker.other,123))
 print tree.edges
@@ -254,4 +261,5 @@ print tree.edges[1].edges
 print tree.edges[1].edges[11].edges
 print tree.edges[1].edges[11].edges[111].edges
 print tree.edges[1].edges[11].edges[111].edges[Joker.other].edges
-print tree.edges[1].edges[11].edges[111].edges[Joker.other].edges[123].edges'''
+print tree.edges[1].edges[11].edges[111].edges[Joker.other].edges[123].edges
+'''

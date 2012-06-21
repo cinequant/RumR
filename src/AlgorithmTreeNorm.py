@@ -10,7 +10,7 @@ import time
 import ProbabilityTree
 import MySQLdb
 
-class AlgorithmTree:
+class AlgorithmTreeNorm:
     
     def __init__(self,occurrences):
         self.empirical_probability=occurrences #won't change after its creation
@@ -18,21 +18,43 @@ class AlgorithmTree:
         self.edges={}
         
         
-    def write_tree(self,features_tree,lenght):
+    '''
+    first generation: features vertex. edges -> keys: 1/3, 2/3 or 1. values: features_index vertex
+    second generation: features_index vertex. edges -> keys:(branch1_key, branch2_key, branch3_key). values: historic vertex
+    third generation: historic vertex. edges -> keys: values: 
+    '''    
+        
+    def write_tree(self,features_tree,lenght, sel):
+        #creating tree's first generation
         for i in range(lenght):
-            self.edges[i]=AlgorithmTree(0)
+            self.edges[i]=AlgorithmTreeNorm(0)
+        features_indexes_set=features_tree.collect_normalized_features_index(sel)
+        #creating tree's second generation
+        for feature_index in features_indexes_set:
+            #here, feature_index is a tuple
+            new_branch=AlgorithmTreeNorm(None)
+            new_branch.weight=1
+            for i in feature_index:
+                self.edges[i].edges[feature_index]=new_branch   
+        #creating tree's third generation              
         for branch1_key in features_tree.edges.keys():
             if True:
                 branch1=features_tree.edges[branch1_key]
                 for branch2_key in branch1.edges.keys():
                     branch2=branch1.edges[branch2_key]
-                    new_branch=AlgorithmTree(branch2.occurrences) #new_branch represents the context x=(s,w_1). It will be used several times as second generation
+                    new_branch=AlgorithmTreeNorm(branch2.occurrences) #new_branch represents the context x=(s,w_1). It will be used several times as second generation
                     for branch3_key in branch2.edges.keys():
                         branch3=branch2.edges[branch3_key]
                         if (branch3!=None):
                             feature_index=branch3.feature_index
-                            self.edges[feature_index].empirical_probability+=branch3.occurrences
-                            self.edges[feature_index].edges[(branch1_key,branch2_key,branch3_key)]=new_branch
+                            #updating empirical_probability of the features
+                            for i in feature_index:
+                                if (i!=0):
+                                    self.edges[i].empirical_probability+=branch3.occurrences/3
+                                else:
+                                    self.edges[i].empirical_probability+=branch3.occurrences*(4-len(feature_index))/3
+                            new_branch.weight+=1        
+                            self.edges[i].edges[feature_index].edges[(branch1_key,branch2_key,branch3_key)]=new_branch
                         else:
                             print 'breakpoint!!'
                             print branch3_key
@@ -47,30 +69,42 @@ class AlgorithmTree:
         n=len(lamb)
         for i in range(n):
             self.edges[i].weight=lamb[i]
-            for context_tree in self.edges[i].edges.values():
-                context_tree.weight+=math.exp(lamb[i])
-                            
-    def p_lambda(self,i): #New Features
-        '''Probability (no empirical) of the feature i'''
-        branch_i=self.edges[i]
-        p_lambda_i=0
-        for historic in branch_i.edges.values():
-            p_lambda_i+=historic.empirical_probability/historic.weight
-        return math.exp(branch_i.weight)*p_lambda_i
+            for feature_index in self.edges[i].edges.keys():
+                feature_index_tree=self.edges[i].edges[feature_index]
+                if (i!=0):
+                    normalizer=1/3
+                else:
+                    normalizer=(4-len(feature_index))/3
+                old_weight=feature_index_tree.weight
+                new_weight=old_weight*math.exp(lamb[i]*normalizer)
+                feature_index_tree.weight=new_weight
+            for historic_tree in self.edges[i].edges[feature_index].edges.values():
+                historic_tree.weight+=new_weight-old_weight
     
-    def p_lambda_norm(self,i): #Normilized Features
+    def p_lambda(self,i): #Normalized Features
         '''Probability (no empirical) of the feature i'''
         branch_i=self.edges[i]
         p_lambda_i=0
-        for historic in branch_i.edges.values():
-            p_lambda_i+=historic.empirical_probability/historic.weight
+        for feature_index_tree in branch_i.edges.values():
+            proba=feature_index_tree.weight
+            for historic_tree in feature_index_tree.edges.values():
+                p_lambda_i+=proba*historic_tree.empirical_probability/historic_tree.weight
+        return p_lambda_i        
     
     def update_weight(self,i,delta_lamb):
         old_lamb=self.edges[i].weight
         new_lamb=old_lamb+delta_lamb
         self.edges[i].weight=new_lamb
-        for branch_key in self.edges[i].edges.keys():
-            self.edges[i].edges[branch_key].weight=self.edges[i].edges[branch_key].weight - math.exp(old_lamb) + math.exp(new_lamb)
+        for feature_index in self.edges[i].edges.keys():
+            if (i!=0):
+                normalizer=1/3
+            else:
+                normalizer=(4-len(feature_index))/3
+            old_probability=self.edges[i].edges[feature_index].weight
+            new_probability=old_probability*math.exp(new_lamb*normalizer)/math.exp(old_lamb*normalizer)
+            self.edges[i].edges[feature_index].weight=new_probability
+            for historic_tree in self.edges[i].edges[feature_index].edges.values():
+                historic_tree.weight+=new_probability-old_probability
             
             
     def weight_selection(self, tree):
@@ -133,11 +167,11 @@ class AlgorithmTree:
                     branch1=proba_tree.edges[branch1_key]
                     for branch2_key in branch1.edges.keys():
                         index_sql+=1
-                        cursor.execute("""INSERT INTO `rafael`.`Probability Tree 10000 Features` (`edge_id`, `key`, `son_id`, `proba`) VALUES  ("%s", "%s", "%s", NULL)"""%(2*branch1_key, branch2_key, index_sql))
+                        cursor.execute("""INSERT INTO `rafael`.`Probability Tree 1000 Normalized Features` (`edge_id`, `key`, `son_id`, `proba`) VALUES  ("%s", "%s", "%s", NULL)"""%(2*branch1_key, branch2_key, index_sql))
                         branch2=branch1.edges[branch2_key]
                         for branch3_key in branch2.edges.keys():
                             branch3=branch2.edges[branch3_key]
-                            cursor.execute("""INSERT INTO `rafael`.`Probability Tree 10000 Features` (`edge_id`, `key`, `son_id`, `proba`) VALUES ("%s","%s",NULL,"%s")"""%(index_sql, branch3_key, branch3.probability))
+                            cursor.execute("""INSERT INTO `rafael`.`Probability Tree 1000 Normalized Features` (`edge_id`, `key`, `son_id`, `proba`) VALUES ("%s","%s",NULL,"%s")"""%(index_sql, branch3_key, branch3.probability))
                             
                 e01=False
             '''if (e02 & (norm<0.01)):
@@ -154,27 +188,19 @@ class AlgorithmTree:
         #L={i:self.edges[i].weight for i in range(n)}
         #cPickle.dump(L, open("Final Weights version 1000 features","w"))
                        
-Sel=pickle.load(open("10000 selected features file"))
+Sel=pickle.load(open("1000 selected features file"))
 print 'Sel ok!'
 print
 print 'creating our features tree: representation of all possible triple (x,y) '
 tree=FeaturesTree.FeaturesTree()
 tree.write_tree(Sel)
-print 'tree: OK!'
-print
-
-t0=time.time()
-print 'start new_features'
-new_feats=tree.new_features()
+print 'tree: OK!\n'
+print 'start normalized_features'
+norm_feats=tree.normalized_features(Sel)
 #tree.edges[Joker.other]=Ot
-print 'end of new_features'
-t1=time.time()
-t=t1-t0
-print 'temps d execution de new_features avec un dict :'+str(t)
-n=len(new_feats)
+print 'end of normalized_features'
+n=len(norm_feats)
 print str(n)+' new features'
-print 'removing sets'
-tree.remove_features()
 print 'saving tree\n'
 #cPickle.dump(tree, open("Features Tree version 1000 features","w"))
 print 'tree saved\n'
@@ -188,11 +214,13 @@ print tree.edges.keys()
 Ot=tree.remove_other()
 print tree.edges.keys()
 lamb=numpy.linspace(0,0,n)       
-algo_tree=AlgorithmTree(0)
-print 'creating AlgorithmTree: OK!'
-algo_tree.write_tree(tree,n)
-print 'writing AlgorithmTree: OK!'
+algo_tree=AlgorithmTreeNorm(0)
+
+print 'creating AlgorithmTreeNorm: OK!'
+algo_tree.write_tree(tree,n, Sel)
+print 'writing AlgorithmTreeNorm: OK!'
 algo_tree.write_weights(lamb)
-print 'weighting AlgorithmTree: OK!'
+print 'weighting AlgorithmTreeNorm: OK!'
+
 print 'getting weights:'
 algo_tree.weight_selection(tree)
