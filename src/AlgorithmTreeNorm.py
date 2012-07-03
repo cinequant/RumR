@@ -10,6 +10,9 @@ import time
 import ProbabilityTree
 import MySQLdb
 
+def norm_log(x_1,x_2):
+    return math.log(x_1)- math.log(x_2)
+
 class AlgorithmTreeNorm:
     
     def __init__(self,occurrences):
@@ -19,7 +22,7 @@ class AlgorithmTreeNorm:
         
         
     '''
-    first generation: features vertex. edges -> keys: 1/3, 2/3 or 1. values: features_index vertex
+    first generation: features vertex. edges -> keys: feature_index values: feature_index vertex
     second generation: features_index vertex. edges -> keys:(branch1_key, branch2_key, branch3_key). values: historic vertex
     third generation: historic vertex. edges -> keys: values: 
     '''    
@@ -35,15 +38,17 @@ class AlgorithmTreeNorm:
             new_branch=AlgorithmTreeNorm(None)
             new_branch.weight=1
             for i in feature_index:
-                self.edges[i].edges[feature_index]=new_branch   
-        #creating tree's third generation              
+                self.edges[i].edges[feature_index]=new_branch
+        #creating tree's third generation
         for branch1_key in features_tree.edges.keys():
             if True:
                 branch1=features_tree.edges[branch1_key]
                 for branch2_key in branch1.edges.keys():
                     branch2=branch1.edges[branch2_key]
                     new_branch=AlgorithmTreeNorm(branch2.occurrences) #new_branch represents the context x=(s,w_1). It will be used several times as second generation
+                    new_branch.weight=len(branch2.edges.keys())
                     for branch3_key in branch2.edges.keys():
+                        count=0
                         branch3=branch2.edges[branch3_key]
                         if (branch3!=None):
                             feature_index=branch3.feature_index
@@ -53,18 +58,16 @@ class AlgorithmTreeNorm:
                                     self.edges[i].empirical_probability+=branch3.occurrences/3
                                 else:
                                     self.edges[i].empirical_probability+=branch3.occurrences*(4-len(feature_index))/3
-                            new_branch.weight+=1        
-                            self.edges[i].edges[feature_index].edges[(branch1_key,branch2_key,branch3_key)]=new_branch
+                            self.edges[i].edges[feature_index].edges[(branch1_key, branch2_key, branch3_key)]=new_branch
+                            count+=1
                         else:
                             print 'breakpoint!!'
                             print branch3_key
                             print branch2_key
                             print branch1_key
-                    
-         
+
     #if we use features_tree.feature_index as an int, we use the method of New Features
-    #otherwise, if we use features_tree.feature_index as a tuple, we use the method of Normalized Features     
-         
+    #otherwise, if we use features_tree.feature_index as a tuple, we use the method of Normalized Features
     def write_weights(self,lamb):
         n=len(lamb)
         for i in range(n):
@@ -80,13 +83,17 @@ class AlgorithmTreeNorm:
                 feature_index_tree.weight=new_weight
             for historic_tree in self.edges[i].edges[feature_index].edges.values():
                 historic_tree.weight+=new_weight-old_weight
-    
-    def p_lambda(self,i): #Normalized Features
+
+    def p_lambda(self,i): #Normalized Features #A CHANGER IMPERATIVEMENT 
         '''Probability (no empirical) of the feature i'''
         branch_i=self.edges[i]
         p_lambda_i=0
-        for feature_index_tree in branch_i.edges.values():
-            proba=feature_index_tree.weight
+        normalizer=1
+        for feature_index in branch_i.edges.keys():
+            if (i==0):
+                normalizer=4-len(feature_index)
+            feature_index_tree=branch_i.edges[feature_index]
+            proba=feature_index_tree.weight*normalizer
             for historic_tree in feature_index_tree.edges.values():
                 p_lambda_i+=proba*historic_tree.empirical_probability/historic_tree.weight
         return p_lambda_i        
@@ -105,43 +112,48 @@ class AlgorithmTreeNorm:
             self.edges[i].edges[feature_index].weight=new_probability
             for historic_tree in self.edges[i].edges[feature_index].edges.values():
                 historic_tree.weight+=new_probability-old_probability
-            
+                   
             
     def weight_selection(self, tree):
+        '''trying to implement the generalized iterative scaling for m=1 and i=(x,y)'''
         n=len(self.edges)
-        P={i:self.p_lambda(i) for i in range(n)}
-        P_tilde={i:self.edges[i].empirical_probability for i in range(n)}
+        P={j:self.p_lambda(j) for j in range(n)}
+        P_tilde={j:self.edges[j].empirical_probability for j in range(n)}
         #booleans for saving data
         #e00=True
         e01=True
         #e02=True
         #e03=True
-        norm=0
         for j in range(n):
-            norm=numpy.maximum(norm,numpy.abs(P[j]-P_tilde[j]))
-        while (norm>1e-04):
-            for i in range(n):
-                P[i]=self.p_lambda(i)
-                if ((P[i]-P_tilde[i]>1e-08) | (P_tilde[i]-P[i]>1e-08)):
-                    if (numpy.abs(P[i]-P_tilde[i])>norm/2):
-                        print (P[i],P_tilde[i])
-                    if (P[i]<0):
+            norm=max(numpy.abs(norm_log(P[j], P_tilde[j])) for j in range(n))
+        while (norm>0.1):
+            '''for j in range(n):
+                P[j]=self.p_lambda(j)
+                if True:
+                    #if (numpy.abs(norm_log(P[i],P_tilde[i]))>norm/2):
+                        #print (P[i],P_tilde[i])
+                    if (P[j]<0):
                         print 'uepa!'
-                        print i
-                        print self.edges[i].edges.keys()
-                        print self.edges[i].weight
-                    '''if (P[i]==0):
-                        delta_lamb=0'''
-                    if (P_tilde[i]==0):
+                        print j
+                        print self.edges[j].edges.keys()
+                        print self.edges[j].weight
+                    #if (P[i]==0):
+                        #delta_lamb=0
+                    if (P_tilde[j]==0):
                         #print 'we have a zero!'
                         #print (P[i],P_tilde[i])
                         delta_lamb=-1 #TEST!!!
                     else:
-                        delta_lamb=math.log(P_tilde[i]) - math.log(P[i])
-                    self.update_weight(i, delta_lamb)
-            #P={i:self.p_lambda(i) for i in range(n)}
-            P[0]=self.p_lambda(0)
-            norm=numpy.abs(P[0]-P_tilde[0])
+                        delta_lamb=norm_log(P_tilde[j],P[j])
+                    self.update_weight(j, delta_lamb)'''
+            
+            P={j:self.p_lambda(j) for j in range(n)}
+            #P[0]=self.p_lambda(0)
+            somme=0
+            for value in P.values():
+                somme+=value
+            print 'P = '+str(somme)
+            norm=max(numpy.abs(norm_log(P[j],P_tilde[j])) for j in range(n))
             print 'new norm ='+str(norm)
             #saving time
             '''if (e00 & (norm<1)):
@@ -174,14 +186,16 @@ class AlgorithmTreeNorm:
                             cursor.execute("""INSERT INTO `rafael`.`Probability Tree 1000 Normalized Features` (`edge_id`, `key`, `son_id`, `proba`) VALUES ("%s","%s",NULL,"%s")"""%(index_sql, branch3_key, branch3.probability))
                             
                 e01=False
-            '''if (e02 & (norm<0.01)):
+            '''
+            if (e02 & (norm<0.01)):
                 L={i:self.edges[i].weight for i in range(n)}
                 cPickle.dump(L, open("Final Weights threshold 0.01 version 1000 features","w"))
                 e02=False
             if (e03 & (norm<0.001)):
                 L={i:self.edges[i].weight for i in range(n)}
                 cPickle.dump(L, open("Final Weights threshold 0.001 version 1000 features","w"))
-                e03=False    '''
+                e03=False    
+           '''
                 #print 'test: difference ='+str(P_tilde-P)
         print 'get it!'
         print 
@@ -213,14 +227,23 @@ print 'finish counting'
 print tree.edges.keys()
 Ot=tree.remove_other()
 print tree.edges.keys()
-lamb=numpy.linspace(0,0,n)       
+#lamb=numpy.linspace(0,0,n)       
 algo_tree=AlgorithmTreeNorm(0)
 
 print 'creating AlgorithmTreeNorm: OK!'
 algo_tree.write_tree(tree,n, Sel)
 print 'writing AlgorithmTreeNorm: OK!'
-algo_tree.write_weights(lamb)
-print 'weighting AlgorithmTreeNorm: OK!'
-
+#algo_tree.write_weights(lamb)
+#print 'weighting AlgorithmTreeNorm: OK!'
+sum1=0
+for i in range(n):
+    sum1+=algo_tree.edges[i].empirical_probability
+print sum1
+sum2=0
+for i in range(n):
+    sum2+=algo_tree.p_lambda(i)
+print sum2
+print 'parou'
+time.sleep(5)
 print 'getting weights:'
 algo_tree.weight_selection(tree)

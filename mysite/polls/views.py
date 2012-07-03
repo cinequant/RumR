@@ -26,32 +26,91 @@ def classifier_message_SQL_1000(message):
             cursor.fetchall()
             if (i!=0):
                 for star in result.keys():
-                    cursor.execute("""SELECT `Probability` FROM `rafael`.`Probability Tree` WHERE `word`="%s" AND `Previous Word`="%s" AND `Stars`="%s" """%(words[i],words[i-1],star))
+                    cursor.execute("""SELECT `Probability` FROM `rafael`.`Probability Tree 1000` WHERE `word`="%s" AND `Previous Word`="%s" AND `Stars`="%s" """%(words[i],words[i-1],star))
                     try: 
                         proba=cursor.fetchone()[0]
                     except:
-                        cursor.execute("""SELECT `Probability` FROM `rafael`.`Probability Tree` WHERE `word`="%s" AND `Previous Word`="%s" AND `Stars`="%s" """%(words[i],'<object object at 0x16c50b0>',star))
+                        cursor.execute("""SELECT `Probability` FROM `rafael`.`Probability Tree 1000` WHERE `word`="%s" AND `Previous Word`="%s" AND `Stars`="%s" """%(words[i],'<object object at 0x16c50b0>',star))
                         try:
                             proba=cursor.fetchone()[0]
                         except:
                             (words[i],words[i-1],star)
-                            cursor.execute("""SELECT `Probability` FROM `rafael`.`Probability Tree` WHERE `word`="%s" AND `Previous Word`="%s" AND `Stars`="%s" """%('<object object at 0x16c50b0>','<object object at 0x16c50b0>',star))
+                            cursor.execute("""SELECT `Probability` FROM `rafael`.`Probability Tree 1000` WHERE `word`="%s" AND `Previous Word`="%s" AND `Stars`="%s" """%('<object object at 0x16c50b0>','<object object at 0x16c50b0>',star))
                             proba=cursor.fetchone()[0]
                     result[star]=result[star]*proba
             else:
                 for star in result.keys():
-                    cursor.execute("""SELECT `Probability` FROM `rafael`.`Probability Tree` WHERE `word`="%s" AND `Previous Word`="%s" AND `Stars`="%s" """%(words[i],None,star))
+                    cursor.execute("""SELECT `Probability` FROM `rafael`.`Probability Tree 1000` WHERE `word`="%s" AND `Previous Word`="%s" AND `Stars`="%s" """%(words[i],None,star))
                     try: 
                         proba=cursor.fetchone()[0]
                     except:
-                        cursor.execute("""SELECT `Probability` FROM `rafael`.`Probability Tree` WHERE `word`="%s" AND `Previous Word`="%s" AND `Stars`="%s" """%(words[i],'<object object at 0x16c50b0>',star))
+                        cursor.execute("""SELECT `Probability` FROM `rafael`.`Probability Tree 1000` WHERE `word`="%s" AND `Previous Word`="%s" AND `Stars`="%s" """%(words[i],'<object object at 0x16c50b0>',star))
                         try:
                             proba=cursor.fetchone()[0]
                         except:
                             (words[i],words[i-1],star)
-                            cursor.execute("""SELECT `Probability` FROM `rafael`.`Probability Tree` WHERE `word`="%s" AND `Previous Word`="%s" AND `Stars`="%s" """%('<object object at 0x16c50b0>','<object object at 0x16c50b0>',star))
+                            cursor.execute("""SELECT `Probability` FROM `rafael`.`Probability Tree 1000` WHERE `word`="%s" AND `Previous Word`="%s" AND `Stars`="%s" """%('<object object at 0x16c50b0>','<object object at 0x16c50b0>',star))
                             proba=cursor.fetchone()[0]
                     result[star]=result[star]*proba
+        somme=sum(result.values())
+        for key in result.keys():
+            result[key]=result[key]/somme
+        return result
+
+def classifier_message_SQL_1001(message):
+        db=MySQLdb.connect("217.160.235.17","rafael","rafael","rafael",use_unicode=True,charset="utf8")
+	print 'connection ok!'
+        cursor=db.cursor()
+        cursor.execute("""SELECT * FROM `rafael`.`Significance_of_the_words` ORDER BY `rafael`.`Significance_of_the_words`.`Divergence_KL` ASC LIMIT 0,1""")
+        p_stars=cursor.fetchone()
+        result={5.0-i/2:p_stars[i+1] for i in range(10)}
+	#message=string.replace(message,'’', '\'')
+        words=re.findall('[^\s\',;.`’!?()/«»]+|[;!?.«»]',message)
+        words.append(None)
+	print 'line 70'
+	print words
+	for i in range(len(words)-1):
+	    cursor.fetchall()
+            if True:
+                for star in result.keys():
+		    matches=cursor.execute("""SELECT `son_id` FROM `rafael`.`Probability Tree 1000 Normalized Features` WHERE `edge_id`="%s" AND `key`="%s" """%(2*star, words[i-1]))
+		    print 'line 76'
+		    if (matches.__float__()>1):
+		        print 'EITA PORRA'	
+		    try:
+                        branch_id=cursor.fetchone()[0]
+                        cursor.execute("""SELECT `proba` FROM `rafael`.`Probability Tree 1000 Normalized Features` WHERE `edge_id`="%s" AND `key`="%s" """%(branch_id,words[i]))
+			if (matches.__float__()>1):
+		            print 'EITA PORRA'
+			try: 
+                            proba=cursor.fetchone()[0]
+			 
+                        except:
+			    try:
+                                cursor.execute("""SELECT `proba` FROM `rafael`.`Probability Tree 1000 Normalized Features` WHERE `edge_id`="%s" AND `key`="%s" """%(branch_id,'<object '))
+			    except:
+				print 'pau na linha 90'
+			    if (matches.__float__()>1):
+		                print 'EITA PORRA'
+                            proba=cursor.fetchone()[0]
+                        
+                    except:
+			try:
+			    cursor.execute("""SELECT `son_id` FROM `rafael`.`Probability Tree 1000 Normalized Features` WHERE `edge_id`="%s" AND `key`='<object' """%(2*star))
+			except:
+			    print 'pau na linha 100'
+			    print 2*star
+			branch_id=cursor.fetchone()[0]
+			try:
+                            cursor.execute("""SELECT `proba` FROM `rafael`.`Probability Tree 1000 Normalized Features` WHERE `edge_id`="%s" AND `key`="%s" """%(branch_id,word[i]))
+                            proba=cursor.fetchone()[0]
+			    
+                        except:
+                            cursor.execute("""SELECT `proba` FROM `rafael`.`Probability Tree 1000 Normalized Features` WHERE `edge_id`="%s" AND `key`="%s" """%(branch_id,'<object '))
+                            proba=cursor.fetchone()[0]
+		    print (star, words[i-1], words[i])
+		    print proba    
+		    result[star]=result[star]*proba
         somme=sum(result.values())
         for key in result.keys():
             result[key]=result[key]/somme
@@ -72,21 +131,27 @@ def classifier_message_SQL_10000(message):
             if True:
                 for star in result.keys():
 		    matches=cursor.execute("""SELECT `son_id` FROM `rafael`.`Probability Tree 10000 Features` WHERE `edge_id`="%s" AND `key`="%s" """%(2*star, words[i-1]))
-		    if (matches.__float__()>1):
-		        print 'EITA PORRA'	
 		    try:
                         branch_id=cursor.fetchone()[0]
-                        cursor.execute("""SELECT `proba` FROM `rafael`.`Probability Tree 10000 Features` WHERE `edge_id`="%s" AND `key`="%s" """%(branch_id,words[i]))
+                        cursor.execute("""SELECT * FROM `rafael`.`Probability Tree 10000 Features` WHERE `edge_id`="%s" AND `key`="%s" """%(branch_id,words[i]))
 			if (matches.__float__()>1):
 		            print 'EITA PORRA'
+			    print [branch_id, words[i-1], None, None]
+			    print matches.fetchone()
+			    print 
+			    fetched=matches.fetchone()
+			    print fetched
+			    print
 			try: 
-                            proba=cursor.fetchone()[0]
+                            proba=fetched[3]
 			    	
                         except:
-                            cursor.execute("""SELECT `proba` FROM `rafael`.`Probability Tree 10000 Features` WHERE `edge_id`="%s" AND `key`="%s" """%(branch_id,'<object object at 0x21830a0>'))
+                            cursor.execute("""SELECT * FROM `rafael`.`Probability Tree 10000 Features` WHERE `edge_id`="%s" AND `key`="%s" """%(branch_id,'<object object at 0x21830a0>'))
 			    if (matches.__float__()>1):
 		                print 'EITA PORRA'
-                            proba=cursor.fetchone()[0]
+				print [branch_id, None, None]
+				
+                            proba=cursor.fetchone()[3]
                         
                     except:
 			cursor.execute("""SELECT `son_id` FROM `rafael`.`Probability Tree 10000 Features` WHERE `edge_id`="%s" AND `key`="%s" """%(2*star,'<object object at 0x21830a0>'))
@@ -124,7 +189,7 @@ def notation(request):
     try:
         message=request.POST["critique"]
         #message=string.replace(message,'’', '\'')
-	output=classifier_message_SQL_1000(message)
+	output=classifier_message_SQL_1001(message)
     except:
 	return HttpResponse("erreur")
     chart = StackedVerticalBarChart(400, 400, y_range=(0, 70))

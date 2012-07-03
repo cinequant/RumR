@@ -25,15 +25,24 @@ class FeaturesTree:
     def __getitem__(self,key):
         return self.edges.__getitem__(key)
     
-    def new_generation(self,i):
+    def new_generation(self, sel, i):
         #creating branches
-        for feature in self.features:
-            t=feature[i]
-            if ((t.__class__==object) & (self.edges[Joker.other]==None)):
-                self.edges[Joker.other]=FeaturesTree()
-            elif ((t not in self.edges) & (t.__class__!=object)):
-                self.edges[t]=FeaturesTree()
-       
+        if (i<self.historic_size):
+            for feature in self.features:
+                t=feature[i]
+                if ((t.__class__==object) & (self.edges[Joker.other]==None)):
+                    self.edges[Joker.other]=FeaturesTree()
+                elif ((t not in self.edges) & (t.__class__!=object)):
+                    self.edges[t]=FeaturesTree()
+        elif (i==self.historic_size):
+            for feature in sel:            
+                t=feature[i]
+                if ((t.__class__==object) & (self.edges[Joker.other]==None)):
+                    self.edges[Joker.other]=FeaturesTree()
+                elif ((t not in self.edges) & (t.__class__!=object)):
+                    self.edges[t]=FeaturesTree()
+        else:
+            raise ValueError("not a correct generation number: "+str(i))  
         #giving its own features        
         for feature in self.features:
             t=feature[i]
@@ -51,15 +60,15 @@ class FeaturesTree:
     def write_tree(self,sel):
         '''number of 'for' loops is equal to historic_size'''
         self.features=set(sel)
-        self.new_generation(0)
+        self.new_generation(sel, 0)
         for branch1_key in self.edges.keys():
-            self.edges[branch1_key].new_generation(1)
+            self.edges[branch1_key].new_generation(sel, 1)
             branch1=self.edges[branch1_key]
             for branch2_key in branch1.edges.keys():
                 branch2=branch1.edges[branch2_key]
                 if (branch2==None):
                     self.edges[branch1_key].edges[branch2_key]=FeaturesTree()
-                self.edges[branch1_key].edges[branch2_key].new_generation(2)
+                self.edges[branch1_key].edges[branch2_key].new_generation(sel, 2)
                 #join more generations here for a deeper tree
     
     def get_edges(self):

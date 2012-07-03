@@ -88,7 +88,7 @@ class AlgorithmTree:
         while (norm>1e-04):
             for i in range(n):
                 P[i]=self.p_lambda(i)
-                if ((P[i]-P_tilde[i]>1e-08) | (P_tilde[i]-P[i]>1e-08)):
+                if ((P[i]-P_tilde[i]>1e-04) | (P_tilde[i]-P[i]>1e-04)):
                     if (numpy.abs(P[i]-P_tilde[i])>norm/2):
                         print (P[i],P_tilde[i])
                     if (P[i]<0):
@@ -116,7 +116,7 @@ class AlgorithmTree:
                 proba_tree=ProbabilityTree.ProbabilityTree()
                 proba_tree.write_tree(self, L)
                 proba_tree.write_weights()
-                cPickle.dump(proba_tree, open("Probability Tree threshold 1 version 10000 features","w"))
+                cPickle.dump(proba_tree, open("Probability Tree threshold 1 version 1000 features","w"))
                 e00=False'''
             if (e01 & (norm<0.1)):
                 L={i:self.edges[i].weight for i in range(n)}
@@ -124,7 +124,7 @@ class AlgorithmTree:
                 proba_tree=ProbabilityTree.ProbabilityTree()
                 proba_tree.write_tree(tree, L)
                 proba_tree.write_weights()
-                #cPickle.dump(proba_tree, open("Probability Tree threshold 0.1 version 10000 features","w"))
+                #cPickle.dump(proba_tree, open("Probability Tree threshold 0.1 version 1000 features","w"))
                 #tree in the mysql db
                 db=MySQLdb.connect("217.160.235.17","rafael","rafael","rafael",use_unicode=True,charset="utf8")
                 cursor=db.cursor()
@@ -133,11 +133,11 @@ class AlgorithmTree:
                     branch1=proba_tree.edges[branch1_key]
                     for branch2_key in branch1.edges.keys():
                         index_sql+=1
-                        cursor.execute("""INSERT INTO `rafael`.`Probability Tree 10000 Features` (`edge_id`, `key`, `son_id`, `proba`) VALUES  ("%s", "%s", "%s", NULL)"""%(2*branch1_key, branch2_key, index_sql))
+                        cursor.execute("""INSERT INTO `rafael`.`Probability Tree 1000 Features` (`edge_id`, `key`, `son_id`, `proba`) VALUES  ("%s", "%s", "%s", NULL)"""%(2*branch1_key, branch2_key, index_sql))
                         branch2=branch1.edges[branch2_key]
                         for branch3_key in branch2.edges.keys():
                             branch3=branch2.edges[branch3_key]
-                            cursor.execute("""INSERT INTO `rafael`.`Probability Tree 10000 Features` (`edge_id`, `key`, `son_id`, `proba`) VALUES ("%s","%s",NULL,"%s")"""%(index_sql, branch3_key, branch3.probability))
+                            cursor.execute("""INSERT INTO `rafael`.`Probability Tree 1000 Features` (`edge_id`, `key`, `son_id`, `proba`) VALUES ("%s","%s",NULL,"%s")"""%(index_sql, branch3_key, branch3.probability))
                             
                 e01=False
             '''if (e02 & (norm<0.01)):
@@ -154,7 +154,7 @@ class AlgorithmTree:
         #L={i:self.edges[i].weight for i in range(n)}
         #cPickle.dump(L, open("Final Weights version 1000 features","w"))
                        
-Sel=pickle.load(open("10000 selected features file"))
+Sel=pickle.load(open("1000 selected features file"))
 print 'Sel ok!'
 print
 print 'creating our features tree: representation of all possible triple (x,y) '

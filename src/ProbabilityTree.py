@@ -1,6 +1,5 @@
 #-*- coding: utf-8 -*-
 from __future__ import division
-from guppy import hpy
 import MySQLdb
 import re
 import Joker
@@ -19,16 +18,26 @@ class ProbabilityTree:
         self.probability=0
         self.edges={}
         self.feature_index=0
-        
+    
     def write_tree(self, feats_tree, lamb):
+        #same structure of a Features Tree, but with .probability=P(w_i|w_{i-1},s) 
+        #for each leaf (s,w_{i-1}, w_i} 
         for key in feats_tree.edges.keys():
             if (feats_tree.get(key)!=None):
                 self.edges[key]=ProbabilityTree()
                 self.edges[key].write_tree(feats_tree.get(key),lamb)
             else:
                 feature_index=feats_tree.feature_index
-                self.probability=math.exp(lamb[feature_index])
-                
+                if (type(feature_index)==int):
+                    self.probability=math.exp(lamb[feature_index])
+                elif (type(feature_index)==tuple):
+                    normalizer=(4-len(feature_index))/3
+                    self.probability=1
+                    for i in feature_index:
+                        if (i==0):
+                            self.probability*=math.exp(lamb[i]*3)
+                        else:        
+                            self.probability*=math.exp(lamb[i]/normalizer)
             
     def write_weights(self):
         for branch1 in self.edges.values():
