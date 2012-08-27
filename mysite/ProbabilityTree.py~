@@ -1,0 +1,107 @@
+#-*- coding: utf-8 -*-
+from __future__ import division
+import MySQLdb
+import re
+import Joker
+import Features
+import FeaturesTree
+import cPickle
+import math
+import string
+import sys
+
+class ProbabilityTree:
+    other=Joker.other
+    
+    def __init__(self):
+        self.probability=0
+        self.edges={}
+        self.feature_index=0
+        
+    def write_tree(self, feats_tree, lamb):
+        for key in feats_tree.edges.keys():
+            if (feats_tree.get(key)!=None):
+                self.edges[key]=ProbabilityTree()
+                self.edges[key].write_tree(feats_tree.get(key),lamb)
+            else:
+                feature_index=feats_tree.feature_index
+                self.probability=math.exp(lamb[feature_index])
+                
+            
+    def write_weights(self):
+        for branch1 in self.edges.values():
+            
+            for branch2 in branch1.edges.values():
+                sum=0
+                for branch3 in branch2.edges.values():
+                    sum+=branch3.probability
+                for branch3 in branch2.edges.values():
+                    branch3.probability=branch3.probability/sum
+                
+    def new_other(self):
+        for key in self.edges.keys():
+            if (key.__class__==object):
+                self.other=key
+                print self.other
+                print 'we have a new other object'            
+        
+    def classifier_word(self, word, previous_word, stars):
+        try:
+            a=self.edges[stars].edges[previous_word].edges[word].probability
+        except:
+            try:
+                a=self.edges[stars].edges[previous_word].edges[self.other].probability
+            except:
+                try:
+                    a=self.edges[stars].edges[self.other].edges[word].probability
+                except:
+                    a=self.edges[stars].edges[self.other].edges[self.other].probability      
+        print (word, previous_word, stars)
+        print 'a = '+str(a)
+        return a
+    
+    def classifier_message(self, message):
+        db=MySQLdb.connect("217.160.235.17","rafael","rafael","rafael",use_unicode=True,charset="utf8")
+        cursor=db.cursor()
+        cursor.execute("""SELECT * FROM `rafael`.`Significance_of_the_words` ORDER BY `rafael`.`Significance_of_the_words`.`Divergence_KL` ASC LIMIT 0,1""")
+        Ps=cursor.fetchone()
+        result={5.0-i/2:Ps[i+1] for i in range(10)}
+        #message=string.replace(message,'’', '\'')
+        words=re.findall('[^\s\',;.`’!?()/«»]+|[;!?.«»]',message)
+        for i in range(len(words)):
+            if (i!=0):
+                for star in result.keys():
+                    result[star]=result[star]*self.classifier_word(words[i],words[i-1],star)
+            else:
+                for star in result.keys():
+                    result[star]=result[star]*self.classifier_word(words[0],None,star)
+        somme=sum(result.values())
+        for key in result.keys():
+            result[key]=result[key]/somme
+        return result
+
+    def main_1000(self):
+        print 'searching tree\n'
+        feats_tree=cPickle.load(open("Features Tree version 1000 features"))
+        print 'tree: OK! \n'
+        wei=cPickle.load(open("Final Weights threshold 0.1 version 1000 features"))
+        print 'weights ok!'
+        proba_tree=ProbabilityTree()
+        proba_tree.write_tree(feats_tree,wei)
+        proba_tree.write_weights()
+        proba_tree.new_other()
+        message=raw_input("Entrer votre message :")
+        D=proba_tree.classifier_message(message)
+        print D
+        
+    def main_1000(self, message):
+        print 'method ok!'
+        feats_tree=cPickle.load(open("Features Tree version 1000 features"))
+        print 'tree ok!'
+        wei=cPickle.load(open("Final Weights threshold 0.1 version 1000 features"))
+        self.write_tree(feats_tree,wei)
+        self.write_weights()
+        self.new_other()
+        D=self.classifier_message(message)
+        return D
+    

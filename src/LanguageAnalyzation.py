@@ -41,7 +41,7 @@ def count_words(myTable):
                
     
 def get_reviews_cond_stars(stars):
-    db=MySQLdb.connect("cinequant.com","rafael","rafael","rafael",use_unicode=True,charset="utf8")
+    db=MySQLdb.connect("217.160.235.17","rafael","rafael","rafael",use_unicode=True,charset="utf8")
     cursor=db.cursor()
     query="""SELECT `review` FROM `rafael`.`cinefrance_moviereviews` WHERE `rating`=%s"""%stars
     cursor.execute(query)
@@ -55,18 +55,28 @@ def get_labeled_comments(stars):
     for t in table:
         T=string.replace(t[0], '’', '\'')
         p=re.findall('[^\s\',;.!?()/«»]+|[;!?«»]', T)
-        for word in p:
-            word=word.lower()
-            if word in dictionary: #
-                dictionary[word]=dictionary.get(word)+1
+        for i in range(len(p)):
+            word=p[i].lower()
+            if i==0:
+                previous_word=None
+            else:
+                previous_word=p[i-1].lower()
+            if (word, previous_word) in dictionary: #
+                dictionary[(word, previous_word)]+=1
                 #print dictionary[word]
             else: 
-                dictionary[word]=1
-        dictionary["total of words"]=sum(dictionary.values())        
+                dictionary[(word, previous_word)]=1
+    dictionary[('total', 'of words')]=sum(dictionary.values())        
     #for duple in sorted(dictionary.iteritems(),key=operator.itemgetter(1),reverse=True):
         #if duple[1]>10:
             #print duple
     return dictionary
+    
+def test_get_labeled_comments():
+    table=get_labeled_comments(3.0)
+    print len(table)
+    print table[('total', 'of words')]
+    print table
     
 def get_all_labeled_comments():
     D=[{},{},{},{},{},{},{},{},{},{}]
@@ -78,13 +88,15 @@ def get_all_labeled_comments():
 
 def all_words(): 
     '''get a dict with all the words that appear in the comments''' 
-    db=MySQLdb.connect("cinequant.com","rafael","rafael","rafael",use_unicode=True,charset="utf8")
+    db=MySQLdb.connect("217.160.235.17","rafael","rafael","rafael",use_unicode=True,charset="utf8")
     cursor=db.cursor()
     cursor.execute("""SELECT `review` FROM `rafael`.`cinefrance_moviereviews`""")   
     dictionary={}
+    count_words=0
     for t in cursor.fetchall():
         T=string.replace(t[0], '’', '\'')
         p=re.findall('[^\s\',;.!?()/«»]+|[;!?«»]', T)
+        count_words+=len(p)
         for word in p:
             word=word.lower()
             if word in dictionary: 
@@ -93,7 +105,11 @@ def all_words():
                 dictionary[word]=1
     print "I got all the words!"
     print len(dictionary)
+    print 'count_words ='+str(count_words)
+    print
     dictionary["total of words"]=sum(dictionary.values())
+    print dictionary["total of words"]
+    print
     return dictionary
 
 
@@ -105,7 +121,61 @@ def all_good_words():
     print len(new_dictionary)        
     return new_dictionary            
     
+def all_sequence_of_words(): 
+    '''get a dict with all the couples of two words that appear in the comments''' 
+    db=MySQLdb.connect("217.160.235.17","rafael","rafael","rafael",use_unicode=True,charset="utf8")
+    cursor=db.cursor()
+    cursor.execute("""SELECT `review` FROM `rafael`.`cinefrance_moviereviews`""")   
+    dictionary={}
+    count_words=0
+    for t in cursor.fetchall():
+        T=string.replace(t[0], '’', '\'')
+        p=re.findall('[^\s\',;.!?()/«»]+|[;!?«»]', T)
+        count_words+=len(p)
+        for i in range(len(p)):
+            word=p[i].lower()
+            if (i==0):
+                previous_word=None
+            else:
+                previous_word=p[i-1].lower()
+            if (word,previous_word) in dictionary: 
+                dictionary[(word,previous_word)]+=1
+            else: 
+                dictionary[(word,previous_word)]=1
+    print "I got all the sequence of words!"
+    print len(dictionary)
+    print 'count_words = '+str(count_words)
+    dictionary[("total", "of words")]=sum(dictionary.values())
+    return dictionary
 
+
+def all_good_sequence_of_words():
+    '''get a dict with all the couples of two words that appear at least 10 times in the comments'''
+    dic=all_sequence_of_words()
+    new_dictionary={d:dic[d] for d in dic.keys() if dic[d]>19}
+    print "good sequence of words:"
+    print len(new_dictionary)        
+    return new_dictionary            
+
+def test_all_good_sequence_of_words():
+    all_words()
+    vocab=all_sequence_of_words()
+    j=0
+    count=0
+    count_2=0
+    cle='de'
+    '''vocab.pop(("total", "of words"))
+    vocab[("total", "of words")]=sum(vocab.values())'''
+    print vocab[("total", "of words")]
+    print vocab[("est", "c")]
+    for key in vocab.keys():
+        if key[1]==cle:
+            count+=vocab[key]
+        if key[0]==cle:
+            count_2+=vocab[key]    
+    print count
+    print count_2    
+        
 
 #doit-on compter plusieurs fois un mot qui apparait plus d'une fois par message ?
 ##OUI
@@ -128,7 +198,7 @@ def density_of(cle,D):
     Q=numpy.linspace(0.0, 0.0, num=10)
     index=0
     while (index<10):
-        Q[index]=D[index]["total of words"]
+        Q[index]=D[index][("total", "of words")]
         if cle in D[index]:
             P[index]=D[index][cle] 
         else:
@@ -165,18 +235,33 @@ def entropy_test():
 
 def entropy_insertion():
     vocab=all_good_words()
-    new_db=MySQLdb.connect("cinequant.com","rafael","rafael","rafael",use_unicode=True,charset="utf8")
+    new_db=MySQLdb.connect("217.160.235.17","rafael","rafael","rafael",use_unicode=True,charset="utf8")
     new_cursor=new_db.cursor()
     D=get_all_labeled_comments()
     for word in vocab.keys():
         dens=density_of(word,D)
         d=divergence_KL(dens)
-        new_query="""INSERT INTO `rafael`.`significance_of_the_words` (`Word`,`Density 5`,`Density 4.5`,`Density 4`,`Density 3.5`,`Density 3`,`Density 2.5`,`Density 2`,`Density 1.5`,`Density 1`,`Density 0.5`,`Divergence_KL`) VALUES ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")"""%(word,dens[0][0],dens[0][1],dens[0][2],dens[0][3],dens[0][4],dens[0][5],dens[0][6],dens[0][7],dens[0][8],dens[0][9],d)
+        new_query="""INSERT INTO `rafael`.`significance_of_sequence_of_words` (`Word`,`Density 5`,`Density 4.5`,`Density 4`,`Density 3.5`,`Density 3`,`Density 2.5`,`Density 2`,`Density 1.5`,`Density 1`,`Density 0.5`,`Divergence_KL`) VALUES ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")"""%(word,dens[0][0],dens[0][1],dens[0][2],dens[0][3],dens[0][4],dens[0][5],dens[0][6],dens[0][7],dens[0][8],dens[0][9],d)
+        new_cursor.execute(new_query)
+        print "insertion réussie"
+
+def significance_of_sequence_of_words_insertion():
+    vocab=all_good_sequence_of_words()
+    new_db=MySQLdb.connect("217.160.235.17","rafael","rafael","rafael",use_unicode=True,charset="utf8")
+    new_cursor=new_db.cursor()
+    D=get_all_labeled_comments()
+    for sequence in vocab.keys():
+        dens=density_of(sequence,D)
+        d=divergence_KL(dens)
+        if (sequence[1]==None):
+            new_query="""INSERT INTO `rafael`.`significance_of_sequence_of_words` (`Word`,`Previous Word`, `Density 5`,`Density 4.5`,`Density 4`,`Density 3.5`,`Density 3`,`Density 2.5`,`Density 2`,`Density 1.5`,`Density 1`,`Density 0.5`,`Divergence_KL`) VALUES ("%s",NULL,"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")"""%(sequence[0],dens[0][0],dens[0][1],dens[0][2],dens[0][3],dens[0][4],dens[0][5],dens[0][6],dens[0][7],dens[0][8],dens[0][9],d)
+        else:
+            new_query="""INSERT INTO `rafael`.`significance_of_sequence_of_words` (`Word`,`Previous Word`, `Density 5`,`Density 4.5`,`Density 4`,`Density 3.5`,`Density 3`,`Density 2.5`,`Density 2`,`Density 1.5`,`Density 1`,`Density 0.5`,`Divergence_KL`) VALUES ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")"""%(sequence[0], sequence[1], dens[0][0],dens[0][1],dens[0][2],dens[0][3],dens[0][4],dens[0][5],dens[0][6],dens[0][7],dens[0][8],dens[0][9],d)
         new_cursor.execute(new_query)
         print "insertion réussie"
 
 def get_most_significant_words():
-    db=MySQLdb.connect("cinequant.com","rafael","rafael","rafael",use_unicode=True,charset="utf8")
+    db=MySQLdb.connect("217.160.235.17","rafael","rafael","rafael",use_unicode=True,charset="utf8")
     cursor=db.cursor()
     cursor.execute("""SELECT * FROM `significance_of_the_words` ORDER BY `significance_of_the_words`.`Divergence_KL` DESC LIMIT 0 , 930""")
     myTable=cursor.fetchall()
@@ -187,13 +272,13 @@ def get_most_significant_words():
 
 def dictionary_db():
     dic=all_words()
-    db=MySQLdb.connect("cinequant.com","rafael","rafael","rafael",use_unicode=True,charset="utf8")
+    db=MySQLdb.connect("217.160.235.17","rafael","rafael","rafael",use_unicode=True,charset="utf8")
     cursor=db.cursor()
     #i=u"bien"
     #Query="""INSERT INTO `rafael`.`cinefrance` (`movie_id`,`all`,`r`,`iew`) VALUES ("%s", "%s");"""%(id_, url, stars ,comment);
     #query=
     #print "ok!"
-    cursor.executemany("""INSERT INTO `rafael`.`dictionary` (`Word`,`N° of appearances`) VALUES ("%s", "%s")""", [(i,dic[i]) for i in dic.keys()])
+    cursor.executemany("""INSERT INTO `rafael`.`dictionary 2` (`Word`,`N° of appearances`) VALUES ("%s", "%s")""", [(i,dic[i]) for i in dic.keys()])
     print "great work!"
     
 
@@ -205,7 +290,14 @@ def dictionary_db():
 #divergence_KL(dens)
 #frequency_of(cle,D)
 #entropy_insertion()
-#all_words()
+#test_all_good_sequence_of_words()
 #all_good_words()
-#get_most_significant_words()
-dictionary_db()
+get_most_significant_words()
+#dictionary_db()
+#D=get_all_labeled_comments()
+'''print len(D)
+print len(D[0])
+print len(D[1])
+print len(D[9])'''
+#significance_of_sequence_of_words_insertion()
+#test_get_labeled_comments()

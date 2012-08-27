@@ -17,6 +17,23 @@ class AlgorithmTree:
         self.weight=0 #will change at each step of the Algorithm
         self.edges={}
         
+    def __str__(self):
+        print 'printing AlgorithmTree'
+        stt=''
+        zeros=''
+        for key_1 in self.edges.keys():
+            stt=stt+'\n'+str(key_1)
+            boo=False
+            value_1=self.edges[key_1]
+            for key_2 in value_1.edges.keys():
+                value_2=value_1.edges[key_2]
+                boo=True
+                stt=stt+'\n'+str((key_1, key_2, value_2.empirical_probability, value_1.weight)) #
+            #if not boo:
+                #zeros=zeros+'\n'+str(key_1)        
+        return stt    
+        
+        
         
     def write_tree(self,features_tree,lenght):
         for i in range(lenght):
@@ -83,6 +100,13 @@ class AlgorithmTree:
         #e02=True
         #e03=True
         norm=0
+        
+        L={i:self.edges[i].weight for i in range(n)}
+        proba_tree=ProbabilityTree.ProbabilityTree()
+        proba_tree.write_tree(tree, L)
+        proba_tree.write_weights()
+        print proba_tree
+        raise ValueError('rrr')
         for j in range(n):
             norm=numpy.maximum(norm,numpy.abs(P[j]-P_tilde[j]))
         while (norm>1e-04):
@@ -109,6 +133,11 @@ class AlgorithmTree:
             P[0]=self.p_lambda(0)
             norm=numpy.abs(P[0]-P_tilde[0])
             print 'new norm ='+str(norm)
+            L={i:self.edges[i].weight for i in range(n)}
+            print 'L = '+str(L)
+            proba_tree.refresh_weights(L)
+            print 'Log vraissemblance = '+str(proba_tree.loglikehood())
+            #print proba_tree
             #saving time
             '''if (e00 & (norm<1)):
                 L={i:self.edges[i].weight for i in range(n)}
@@ -119,11 +148,12 @@ class AlgorithmTree:
                 cPickle.dump(proba_tree, open("Probability Tree threshold 1 version 1000 features","w"))
                 e00=False'''
             if (e01 & (norm<0.1)):
-                L={i:self.edges[i].weight for i in range(n)}
+                raise ValueError('parou')
+                #L={i:self.edges[i].weight for i in range(n)}
                 #cPickle.dump(L, open("Final Weights threshold 0.1 version 1000 features","w"))
-                proba_tree=ProbabilityTree.ProbabilityTree()
-                proba_tree.write_tree(tree, L)
-                proba_tree.write_weights()
+                #proba_tree=ProbabilityTree.ProbabilityTree()
+                #proba_tree.write_tree(tree, L)
+                #proba_tree.write_weights()
                 #cPickle.dump(proba_tree, open("Probability Tree threshold 0.1 version 1000 features","w"))
                 #tree in the mysql db
                 db=MySQLdb.connect("217.160.235.17","rafael","rafael","rafael",use_unicode=True,charset="utf8")
@@ -174,7 +204,7 @@ print 'temps d execution de new_features avec un dict :'+str(t)
 n=len(new_feats)
 print str(n)+' new features'
 print 'removing sets'
-tree.remove_features()
+#tree.remove_features()
 print 'saving tree\n'
 #cPickle.dump(tree, open("Features Tree version 1000 features","w"))
 print 'tree saved\n'

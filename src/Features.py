@@ -4,6 +4,7 @@ Created on Apr 18, 2012
 
 @author: rafael
 '''
+
 import Joker
 import IteratorWords
 import FeaturesTree
@@ -11,6 +12,7 @@ import pickle
 import numpy
 import time
 import cPickle
+import MySQLdb
 
 any_word=Joker.any_word
 
@@ -82,7 +84,7 @@ def historic():
 
 #insertion dicotomique
 def insertion(tup,values,L,first,last):
-    '''as used in select_features'''
+    '''as used in select_features_by_occurrences'''
     if (values[tup]>=values[L[first][0]]):
         L.insert(first,(tup,values[tup]))
     elif (values[tup]<=values[L[last][0]]):
@@ -94,7 +96,7 @@ def insertion(tup,values,L,first,last):
     else:
         insertion(tup,values,L,(first+last)/2,last)
 
-def select_features(features,n):
+def select_features_by_occurrences(features,n):
     '''takes a dictionary of features and selects the n with the biggest number of appearances'''
     '''why a list: need to have an order'''
     try:
@@ -113,27 +115,47 @@ def select_features(features,n):
         result[index]=result[index][0]        
     return result
     
+def select_features_by_divergence_KL(features):
+    new_db=MySQLdb.connect("217.160.235.17","rafael","rafael","rafael",use_unicode=True,charset="utf8")
+    new_cursor=new_db.cursor()
+    result=[]
+    new_cursor.execute("""SELECT * FROM `rafael`.`significance_of_sequence_of_words` ORDER BY `significance_of_sequence_of_words`.`Divergence_KL` DESC LIMIT 0,150""")
+    table=new_cursor.fetchall()
+    for i in range(10):
+        j=float(i)
+        stars=5.0-j/2.0
+        density_position=i+2
+        for entry in table:
+            if entry[density_position]>=0.25:
+                result.append((stars, entry[1], entry[0]))
+    return result            
+    
 '''feat=write_features()
 #recording our features in a file
 pickle.dump(feat,open("features file","w"))
 print "file ok"
 pickle.load(open("features files"))    
 print "the end"'''
-        
-'''feat=write_features()
+'''        
+feat=write_features()
 D=feat[0]
 hist=historic()
 print 'ok!'
 print len(hist)
 print 'ok'         
-#Sel=select_features(D,100)
+Sel=select_features_by_occurrences(D,100)
 #print Sel'''
-
-'''Feat=write_features()
-c_Sel=select_features(Feat[0],10000)
+'''
+Feat=write_features()
+Sel_0=select_features_by_occurrences(Feat[0], 1000)
+Sel_1=select_features_by_divergence_KL(Feat[0])
+for element in Sel_1:
+    if element not in Sel_0:
+        Sel_0.append(element)
+print len(Sel_0)
 #recording our features in a file
-cPickle.dump(c_Sel,open("10000 selected features file with cPickle","w"))'''
-
+cPickle.dump(Sel_0,open("super selected features file with cPickle","w"))
+'''
 
 '''
 #using our features file
@@ -164,3 +186,8 @@ lamb=numpy.linspace(0,0,n)
 print
 print 'calculating conditional probability for lambda equals to zero'
 tree.p_lambda(lamb,S,n)'''
+l=cPickle.load(open('tableau de tous les features'))
+a=set([i for i in l.keys() if l[i]>=10])
+#print a[(5.0, u'est', u'extraordinaire')]
+
+cPickle.dump(a, open('Features over 10 occurrences', 'w'))

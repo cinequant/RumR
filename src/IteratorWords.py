@@ -25,12 +25,18 @@ class IteratorWords:
     def __iter__(self):
         return self
     
+    def __len__(self):
+        count=0
+        for i in self:
+            count+=1
+        return count    
+        
     def next(self):
         if (len(self.message)==0)|(self.word_index==len(self.message)):
             self.fetch=self.cursor.fetchone()
             if (self.fetch==None):
                 raise StopIteration
-            self.message=re.findall('[^\s\',;.!?()/«»]+|[;!?.«»]',string.replace(self.fetch[3],'’', '\''))
+            self.message=re.findall(u'[^\s\',;.!?()/«»]+|[;!?.«»]',string.replace(self.fetch[3],u'’', u'\''))
             self.stars=self.fetch[2]
             self.word_index=1
             [self.words.append(None) for j in range(self.word_count)]
@@ -47,6 +53,7 @@ class IteratorWords:
         
 '''DDD= IteratorWords()
 #cle=u"bien"
+print len(DDD)
 p=0      
 for i in DDD:
     if (i.words[1]=='touchante') & (i.stars==0.5):
@@ -55,4 +62,5 @@ for i in DDD:
         print i.word
     #print "mot = {0}, mot précedent = {1}, mot d'avant = {2}, étoiles = {3}".format(i.word,i.words[1],i.words[0],i.stars)
 print p
+
 print "c'est la fin !"'''

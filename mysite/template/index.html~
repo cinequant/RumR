@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr-FR">
+
+<head>
+<meta http-equiv="Content-Type" content="index/html;charset=UTF-8">
+<title>RumR</title>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.min.js"></script>
+
+
+</head>
+
+
+<body>
+       
+<script>
+//CONTROLLING EVENTS IN jQuery
+$(document).ready(function(){
+       /* AJAX */
+       /*<![CDATA[ code from
+http://www.micahcarrick.com/ajax-form-submission-django.html 
+       jQuery(function() {
+               var form = jQuery("#ratingForm");
+	       var img = jQuery("#chart");
+               form.submit(function(e) {
+                       jQuery.post(
+                                   form.attr('action'),
+                                   form.serializeArray(),
+                                   function(url) {
+                                       img.attr("src", url);
+                                       //responseArray=eval(url);
+                                       // la suite a coder pour faire le graph
+                                   }
+                                   );
+                       e.preventDefault();
+                   });
+           });*/
+  });
+
+</script>
+Interface d'évaluation des critiques de film
+
+<!--<form id="ratingForm" action="#" method="POST">-->
+<form id="ratingForm" action="notation" method="POST" target="_blank" >
+{% csrf_token %}
+
+<textarea id="critique" name="critique">
+</textarea>
+<br>
+
+  <input type="submit" name="submit" value="Noter"/>
+ 
+
+</form>
+
+<form action=" " methode='POST' >
+</form>
+
+<img src="" id='chart'/>
+
+<div id="footer">RumR a été développé par Cinequant SAS</div>
+
+
+</body>
+</html>
+

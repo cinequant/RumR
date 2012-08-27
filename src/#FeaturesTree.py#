@@ -1,0 +1,27 @@
+'''
+Created on May 10, 2012
+
+@author: rafael
+'''
+
+class FeaturesTree:
+
+    def __init__(self):
+        self.features=set()
+        self.edge={}
+        self.father=None
+        return self
+
+    def __init__(self,tree,hist,sel):
+        self.features=set(sel)
+        self.edge={hist}
+        self.father=tree
+        i=0 #conteur sur l'historique
+        for x in hist:
+            self.dict[x]=FeaturesTree(x. ,)
+        return self
+
+    def getFather(self):
+        return self.father
+
+    def get(self):
