@@ -102,21 +102,6 @@ class AlgorithmTreeNorm:
 
     #if we use features_tree.feature_index as an int, we use the method of New Features
     #otherwise, if we use features_tree.feature_index as a tuple, we use the method of Normalized Features
-    def write_weights(self,lamb):
-        n=len(lamb)
-        for i in range(n):
-            self.edges[i].weight=lamb[i]
-            for feature_index in self.edges[i].edges.keys():
-                feature_index_tree=self.edges[i].edges[feature_index]
-                if (i!=0):
-                    normalizer=1/3
-                else:
-                    normalizer=(4-len(feature_index))/3
-                old_weight=feature_index_tree.weight
-                new_weight=old_weight*math.exp(lamb[i]*normalizer)
-                feature_index_tree.weight=new_weight
-                for historic_tree in self.edges[i].edges[feature_index].edges.values():
-                    historic_tree.weight+=new_weight-old_weight
 
     def test_write_weights(self):
         Sel=cPickle.load(open('3 selected features file'))
@@ -124,7 +109,7 @@ class AlgorithmTreeNorm:
         tree.write_tree(Sel)
 
     def p_lambda(self,i):  
-        '''Probability of the feature i calculated to the vector lambda'''
+        '''Theoretical expectation of the feature i calculated to the vector lambda'''
         branch_i=self.edges[i]
         p_lambda_i=0
         normalizer=1/3
@@ -136,7 +121,6 @@ class AlgorithmTreeNorm:
             for historic_tree in feature_index_tree.edges.values():
                 p_lambda_i+=proba*historic_tree.empirical_probability/historic_tree.weight
         #if p_lambda<=0:
-            
         return p_lambda_i        
 
     def test_p_lambda(self):
@@ -287,7 +271,6 @@ class AlgorithmTreeNorm:
       
     def new_weight_selection(self, tree):
         n=len(self.edges)-1
-        
         L={i:self.edges[i].weight for i in range(n+1)}
         proba_tree=ProbabilityTree.ProbabilityTree()
         proba_tree.write_tree(tree, L)
