@@ -11,9 +11,6 @@ import time
 import ProbabilityTree
 import MySQLdb
 
-def test():
-    return cPickle.load(open("Allez la"))
-
 def norm_log(x_1,x_2):
     if ((x_1>0) & (x_2>0)):
         return math.log(x_1)- math.log(x_2)
@@ -92,21 +89,10 @@ class AlgorithmTreeNorm:
                                     self.edges[i].empirical_probability+=branch3.occurrences*(4-len(feat_index))/3
                             second_generation[feat_index].edges[(branch1_key, branch2_key, branch3_key)]=new_branch #self.edges[i].edges
                         else:
-                            raise ValueError('breakpoint!!')
-        '''for i in self.edges.keys():
-            if self.edges[i].empirical_probability==0:
-                self.edges.pop(i)'''
-        '''for tuple in second_generation.keys():
-            if len(second_generation[tuple].edges)==0:
-                raise ValueError('eita porra '+str(tuple))'''
+                            raise ValueError('branch not created')
 
     #if we use features_tree.feature_index as an int, we use the method of New Features
     #otherwise, if we use features_tree.feature_index as a tuple, we use the method of Normalized Features
-
-    def test_write_weights(self):
-        Sel=cPickle.load(open('3 selected features file'))
-        tree=FeaturesTree.FeaturesTree()
-        tree.write_tree(Sel)
 
     def p_lambda(self,i):  
         '''Theoretical expectation of the feature i calculated to the vector lambda'''
@@ -174,7 +160,7 @@ class AlgorithmTreeNorm:
                 print (empirical_counter[i], self.edges[i+1].empirical_probability)
                 boo=False
         if not boo:
-            print 'problem'
+            print 'problem: some empirical probabilities are not enough accurate'
 
     def weight_selection_3(self, tree):
         n=len(self.edges)

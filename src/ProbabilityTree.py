@@ -28,28 +28,28 @@ def classifier_message_SQL_1001(message):
         for star in result.keys():
             matches=cursor.execute("""SELECT `son_id` FROM `rafael`.`Probability Tree 1000 Normalized Features` WHERE `edge_id`="%s" AND `key`="%s" """%(2*star, words[i-1]))
             if (matches.__float__()>1):
-                print 'EITA PORRA'    
+                print 'problème ligne 31'    
             try:
                 branch_id=cursor.fetchone()[0]
                 cursor.execute("""SELECT `proba` FROM `rafael`.`Probability Tree 1000 Normalized Features` WHERE `edge_id`="%s" AND `key`="%s" """%(branch_id,words[i]))
                 if (matches.__float__()>1):
-                    print 'EITA PORRA'
+                    print 'problème ligne 36'
                 try: 
                     proba=cursor.fetchone()[0]
                 except:
                     try:
                         cursor.execute("""SELECT `proba` FROM `rafael`.`Probability Tree 1000 Normalized Features` WHERE `edge_id`="%s" AND `key`="%s" """%(branch_id,'<object '))
                     except:
-                        print 'pau na linha 90'
+                        print 'problème ligne 43'
                     if (matches.__float__()>1):
-                        print 'EITA PORRA'
+                        print 'problème ligne 45'
                     proba=cursor.fetchone()[0]
                         
             except:
                 try:
                     cursor.execute("""SELECT `son_id` FROM `rafael`.`Probability Tree 1000 Normalized Features` WHERE `edge_id`="%s" AND `key`='<object' """%(2*star))
                 except:
-                    print 'pau na linha 100'
+                    print 'problème ligne 52'
                     print 2*star
                 branch_id=cursor.fetchone()[0]
                 try:
@@ -79,8 +79,6 @@ def classifier_message_SQL_super(message):
         cursor.fetchall()
         for star in result.keys():
             matches=cursor.execute("""SELECT `son_id` FROM `rafael`.`Probability Tree Super Normalized Features` WHERE `edge_id`="%s" AND `key`="%s" """%(2*star, words[i-1]))
-            '''if (matches.__float__()>1):
-                print 'EITA PORRA'  '''  
             try:
                 branch_id=cursor.fetchone()[0]
                 cursor.fetchall()
@@ -95,9 +93,9 @@ def classifier_message_SQL_super(message):
                     try:
                         cursor.execute("""SELECT `proba` FROM `rafael`.`Probability Tree Super Normalized Features` WHERE `edge_id`="%s" AND `key`="%s" """%(branch_id,'<object object at 0x13b90a0> '))
                     except:
-                        print 'pau na linha 90'
+                        print 'problème ligne 96'
                     if (matches.__float__()>1):
-                        print 'EITA PORRA'
+                        print 'problème ligne 98'
                         print (branch_id,words[i-1],words[i])
                     proba=cursor.fetchone()[0]
                     cursor.fetchall()
@@ -106,7 +104,7 @@ def classifier_message_SQL_super(message):
                 try:
                     cursor.execute("""SELECT `son_id` FROM `rafael`.`Probability Tree Super Normalized Features` WHERE `edge_id`="%s" AND `key`='<object object at 0x13b90a0> ' """%(2*star))
                 except:
-                    print 'pau na linha 100'
+                    print 'problème ligne 107'
                     print 2*star
                 branch_id=cursor.fetchone()[0]
                 cursor.fetchall()
@@ -190,62 +188,6 @@ def classifier_message_SQL_super_2(message):
     print 'time ='+str(t1-t0)
     return result
 
-
-def classifier_message_SQL_super_alternative(message):
-    db=MySQLdb.connect("217.160.235.17","rafael","rafael","rafael",use_unicode=True,charset="utf8")
-    cursor=db.cursor()
-    cursor.execute("""SELECT * FROM `rafael`.`Significance_of_the_words` ORDER BY `rafael`.`Significance_of_the_words`.`Divergence_KL` ASC LIMIT 0,1""")
-    p_stars=cursor.fetchone()
-    result={5.0-i/2: 0 for i in range(10)} #p_stars[i+1]
-    #message=string.replace(message,'’', '\'')
-    words=re.findall(u'[^\s\',;.`’!?()/«»]+|[;!?.«»]',message)
-    words.append(None)
-    for i in range(len(words)-1):
-        cursor.fetchall()
-        result_word={5.0-i/2: 1 for i in range(10)}
-        for star in result.keys():
-            matches=cursor.execute("""SELECT `son_id` FROM `rafael`.`Probability Tree Super Normalized Features over 2000 Features` WHERE `edge_id`="%s" AND `key`="%s" """%(2*star, words[i-1]))
-            if (matches.__float__()>1):
-                print 'EITA PORRA'    
-            try:
-                branch_id=cursor.fetchone()[0]
-                cursor.execute("""SELECT `proba` FROM `rafael`.`Probability Tree Super Normalized Features over 2000 Features` WHERE `edge_id`="%s" AND `key`="%s" """%(branch_id,words[i]))
-                if (matches.__float__()>1):
-                    print 'EITA PORRA'
-                try: 
-                    proba=cursor.fetchone()[0]
-                except:
-                    try:
-                        cursor.execute("""SELECT `proba` FROM `rafael`.`Probability Tree Super Normalized Features over 2000 Features` WHERE `edge_id`="%s" AND `key`="%s" """%(branch_id,'<object object at 0x1ce10a0>'))
-                    except:
-                        print 'pau na linha 90'
-                    if (matches.__float__()>1):
-                        print 'EITA PORRA'
-                    proba=cursor.fetchone()[0]
-                        
-            except:
-                try:
-                    cursor.execute("""SELECT `son_id` FROM `rafael`.`Probability Tree Super Normalized Features over 2000 Features` WHERE `edge_id`="%s" AND `key`='<object object at 0x1ce10a0>' """%(2*star))
-                except:
-                    print 'pau na linha 100'
-                    print 2*star
-                branch_id=cursor.fetchone()[0]
-                try:
-                    cursor.execute("""SELECT `proba` FROM `rafael`.`Probability Tree Super Normalized Features over 2000 Features` WHERE `edge_id`="%s" AND `key`="%s" """%(branch_id,words[i]))
-                    proba=cursor.fetchone()[0]
-                except:
-                    cursor.execute("""SELECT `proba` FROM `rafael`.`Probability Tree Super Normalized Features over 2000 Features` WHERE `edge_id`="%s" AND `key`="%s" """%(branch_id,'<object object at 0x1ce10a0>'))
-                    proba=cursor.fetchone()[0]
-            result_word[star]=proba
-        biggest_probability=max(result_word.values())
-        for label in result_word.keys():
-            if (result_word[label]==biggest_probability):
-                result[label]+=1
-        
-    somme=sum(result.values())
-    for key in result.keys():
-        result[key]=result[key]/somme
-    return result
 
 def show_distribution(stars, previous_word, cursor):
     cursor.execute("""SELECT `son_id` FROM `rafael`.`Probability Tree Super Normalized Features` WHERE `edge_id`="%s" AND `key`="%s" """%(2*stars, previous_word))
@@ -374,9 +316,9 @@ class ProbabilityTree:
         return stt     
     
     def write_tree(self, feats_tree, lamb):
-        #same structure of a Features Tree, but with .probability=P(w_i|w_{i-1},s)
-        #for each leaf (s,w_{i-1}, w_i})
-        #print 'lambda ='+str(lamb)
+        '''same structure of a Features Tree, but with .probability=P(w_i|w_{i-1},s)
+        for each leaf (s,w_{i-1}, w_i})
+        print 'lambda ='+str(lamb)'''
         for key_1 in feats_tree.edges.keys():
             self.edges[key_1]=ProbabilityTree()
             proba_tree_1=self.edges[key_1]
@@ -400,26 +342,9 @@ class ProbabilityTree:
                                 proba_tree_3.probability*=math.exp(lamb[i]*normalizer)
                             else:
                                 proba_tree_3.probability*=math.exp(lamb[i]/3)
-        '''for key in feats_tree.edges.keys():
-            if (feats_tree.get(key)!=None):
-                self.edges[key]=ProbabilityTree()
-                self.edges[key].write_tree(feats_tree.get(key),lamb)
-            else:
-                feature_index=feats_tree.feature_index
-                if (type(feature_index)==int):
-                    raise ValueError('tomar no cu')
-                    self.probability=math.exp(lamb[feature_index])
-                elif (type(feature_index)==tuple):
-                    normalizer=(4-len(feature_index))/3
-                    self.probability=1
-                    for i in feature_index:
-                        if (i!=0):
-                            self.probability*=math.exp(lamb[i]*3)
-                        else:        
-                            self.probability*=math.exp(lamb[i]/normalizer)
-                    print  '''
             
     def write_weights(self):
+        '''normalize probabilities ( i.e. divide by Z(x) )'''
         for branch1 in self.edges.values():
             for branch2 in branch1.edges.values():
                 sum=0
@@ -471,6 +396,7 @@ class ProbabilityTree:
         return result
         
     def test_max_loglikehood(self, epsilon, lamb):
+        print 'begin test_max_loglikehood'
         n=len(lamb)
         print n
         new_lamb=dict(lamb)
@@ -483,7 +409,7 @@ class ProbabilityTree:
             if (old_loglikehood<new_loglikehood):
                 count+=1
             new_lamb[i]-=epsilon
-        print 'fudeu '+str(count)+' vezes'    
+        print 'maximum not reached at '+str(count)+' coordinates'    
         
         
     def classifier_word(self, word, previous_word, stars):
@@ -653,21 +579,6 @@ class ProbabilityTree:
         D=self.classifier_message_SQL_super(message)
         return D
 '''
-tree=ProbabilityTree()
-#print h.heap()
-t0=time.time()
-D=tree.main_SQL_1000("J'ai revu Avatar dernièrement. La première partie est extraordinaire : c'est l'arrivée de Jake sur Pandora, son initiation à l'Avatar, son incursion virtuelle chez les Na'vi, son rapprochement avec Neytiri, son apprentissage de la culture Na'Vi. La deuxième partie est, à mon avis bien sûr, désolante. On retrouve le cliché classique du film américain qui consiste à présenter les bons cows-boys et les méchants Indiens, ou les bons Nordistes et les méchants Sudistes, ou les bons soldats américains et les mauvais Vietnamiens. Dans Avatar, on retrouve ce même cliché désolant : ces bons américains présomptueux qui se croient nantis d'une mission divine pour s'accaparer en toute impunité, de la matière première énergétique de Pandora en faisant fi des autochtones qualifiés de sous-civilisés. Au seul nom du désir de possession du minerai, ces bons américains usent sans vergogne des armes pour éliminer les Na'vi gênants. La troisième partie est bien sûr cornélienne. Le /bon américain/ est amoureux de la /mauvaise Na'vi/ et il est pris entre le devoir de sa position de militaire et l'amour qu'il a à la fois pour Neytiri et à la fois pour la culture Na'Vi. Ici, on a affaire, comme d'habitude dans ce genre de scénario, à un groupe de bons américains défiant l'ordre établi. Et rapidement, après moults épisodes sanglants, les très méchants sont éliminés un par un et les bons Na'Vi, malgré toutes les pertes humaines et matériels qu'ils ont subies, retrouvent la sérénité qu'ils connaissaient avant l'arrivée des étrangers. Encore que le film, dans sa conclusion, reste discret sur le devenir de la station américaine sur Pandora après le cuisant échec qu'elle aura connue. Tout ça nous amène à un super long métrage qui passe sans qu'on s'en rende compte, tant sont prenantes les séquences de réel et de virtuel qui se succèdent à un rythme infernal. Un bon film en définitive au point de vue des images, du son et de l'histoire si l'on fait fi néanmoins des clichés stéréotypés décrits auparavant.")
-print D 
-t1=time.time()
-print t1-t0
-'''
-'''
-tree=ProbabilityTree()    
-D=tree.main_SQL_super("wahoo ro qu'elle film james cameron nous a offert un magnifique cadeau sa étais un veritable chef d'oeuvre. vivement les prochain.")
-tree.print_tree()
-print D
-'''
-'''
 tree=pickle.load(open("Features Tree version 3 features"))
 #print tree
 L=cPickle.load(open("Final Weights threshold 0.01 version 3 features"))
@@ -686,18 +597,6 @@ llh = proba_tree.loglikehood()
 print llh
 proba_tree.test_max_loglikehood(0.5, L)
 '''
-'''L=numpy.linspace(0,0,1001)
-proba_tree=ProbabilityTree()
-proba_tree.write_tree(tree, L)
-proba_tree.write_weights()
-print proba_tree.loglikehood()
-proba_tree.test_max_loglikehood(2.0, L)
-'''
-'''db=MySQLdb.connect("217.160.235.17","rafael","rafael","rafael",use_unicode=True,charset="utf8")
-cursor=db.cursor()
-star=2.0
-previous_word=u'<object object at 0x25420a0>'
-show_distribution(star, previous_word, cursor) ''' 
 #message="C'est surement le meilleur film que je n'ai jamais vu jusqu'à maintenant. Je ne me lasse jamais de voir et revoir ce film. Un ce chef d'oeuvre."
 #print classifier_message_SQL_super_2(message)
 test_database()
